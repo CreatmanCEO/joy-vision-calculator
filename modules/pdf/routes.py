@@ -2,6 +2,7 @@
 from flask import Blueprint, send_file, jsonify, current_app
 from models import Order
 from .specification import generate_specification_pdf
+from .commercial import generate_commercial_pdf
 import os
 
 pdf_bp = Blueprint('pdf', __name__)
@@ -29,4 +30,30 @@ def download_specification(order_id):
         mimetype='application/pdf',
         as_attachment=True,
         download_name=f'Разблюдовка_{order_id}.pdf'
+    )
+
+
+@pdf_bp.route('/orders/<int:order_id>/pdf/kp', methods=['GET'])
+def download_commercial(order_id):
+    """Скачать коммерческое предложение для заказа"""
+    order = Order.query.get(order_id)
+    if not order:
+        return jsonify({'success': False, 'error': 'Заказ не найден'}), 404
+
+    # Путь для сохранения PDF
+    output_dir = current_app.config.get('PDF_EXPORTS_DIR', 'data/exports')
+    os.makedirs(output_dir, exist_ok=True)
+
+    output_path = os.path.join(output_dir, f'KP_{order_id}.pdf')
+
+    try:
+        generate_commercial_pdf(order, output_path)
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Ошибка генерации PDF: {str(e)}'}), 500
+
+    return send_file(
+        output_path,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=f'КП_{order_id}.pdf'
     )
