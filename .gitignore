@@ -45,3 +45,6 @@ htmlcov/
 
 # Fonts (download separately)
 static/fonts/*.ttf
+
+# Git worktrees
+.worktrees/
