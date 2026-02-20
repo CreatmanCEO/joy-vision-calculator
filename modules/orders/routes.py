@@ -6,6 +6,7 @@ API эндпоинты для работы с заказами
 from flask import Blueprint, request, jsonify
 from extensions import db
 from models.order import Order, OrderSystem
+from modules.calculator import calculate_system
 
 orders_bp = Blueprint('orders', __name__)
 
@@ -139,6 +140,12 @@ def add_system(order_id):
         if field not in data:
             return jsonify({'success': False, 'error': f'{field} обязателен'}), 400
 
+    # Расчёт комплектующих
+    try:
+        calculated = calculate_system(data)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
     # Определяем следующую позицию
     max_pos = db.session.query(db.func.max(OrderSystem.position)).filter(
         OrderSystem.order_id == order_id
@@ -163,14 +170,10 @@ def add_system(order_id):
         floor_lock=data.get('floor_lock', False),
         closer=data.get('closer', False),
         painting=data.get('painting', False),
-        custom_ral_color=data.get('custom_ral_color')
+        custom_ral_color=data.get('custom_ral_color'),
+        calculated_data=calculated,
+        price=calculated.get('summary', {}).get('total_price', 0)
     )
-
-    # TODO: Вызвать калькулятор и заполнить calculated_data, price
-    # from modules.calculator import calculate_system
-    # result = calculate_system(system)
-    # system.calculated_data = result
-    # system.price = calculate_price(result)
 
     db.session.add(system)
     order.recalculate_total()
