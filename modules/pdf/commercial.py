@@ -212,13 +212,15 @@ def generate_commercial_pdf(order, output_path):
 
         if order.with_assembly:
             assembly_cost = subtotal * 0.05  # 5% от стоимости
-            additional_data.append([str(idx), 'Сборка', f'{order.systems_count} систем', f'{assembly_cost:,.2f}'])
+            systems_count = len(order.systems)
+            additional_data.append([str(idx), 'Сборка', f'{systems_count} систем', f'{assembly_cost:,.2f}'])
             additional_total += assembly_cost
             idx += 1
 
         if order.with_install:
             install_cost = subtotal * 0.15  # 15% от стоимости
-            additional_data.append([str(idx), 'Монтаж', f'{order.systems_count} систем', f'{install_cost:,.2f}'])
+            systems_count = len(order.systems)
+            additional_data.append([str(idx), 'Монтаж', f'{systems_count} систем', f'{install_cost:,.2f}'])
             additional_total += install_cost
             idx += 1
 
