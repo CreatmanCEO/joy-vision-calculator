@@ -37,10 +37,38 @@ def create_app(config_class=None):
         from models import Order, OrderSystem, PriceItem
         db.create_all()
 
-    # Главная страница
+    # ========== HTML СТРАНИЦЫ ==========
+
+    # Главная страница - список заказов
     @app.route('/')
+    @app.route('/orders')
     def index():
         return render_template('index.html')
+
+    # Создание нового заказа
+    @app.route('/orders/new')
+    def new_order():
+        return render_template('orders/new.html')
+
+    # Детали заказа
+    @app.route('/order/<int:order_id>')
+    def order_detail(order_id):
+        return render_template('orders/detail.html', order_id=order_id)
+
+    # Управление ценами
+    @app.route('/prices')
+    def prices_list():
+        return render_template('prices/list.html')
+
+    # Импорт цен
+    @app.route('/prices/import')
+    def prices_import():
+        return render_template('prices/import.html')
+
+    # Страница тестирования
+    @app.route('/test')
+    def test_page():
+        return render_template('test.html')
 
     # Healthcheck
     @app.route('/health')

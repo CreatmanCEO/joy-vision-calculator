@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Новый заказ — Joy Vision Calculator{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-plus-circle"></i> Новый заказ</h1>
+            <a href="/orders" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Назад
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form id="create-order-form">
+                    <h5 class="card-title mb-3">Информация о заказчике</h5>
+
+                    <div class="mb-3">
+                        <label class="form-label">Название компании / Заказчик <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="customer_name" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Город</label>
+                            <input type="text" class="form-control" name="city" placeholder="Москва">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Цвет RAL</label>
+                            <input type="text" class="form-control" name="ral_color" value="RAL 9016">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Скидка, %</label>
+                            <input type="number" class="form-control" name="discount_percent" value="0" min="0" max="50" step="1">
+                        </div>
+
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">Статус</label>
+                            <select class="form-select" name="status">
+                                <option value="draft" selected>Черновик</option>
+                                <option value="confirmed">Подтверждён</option>
+                                <option value="in_production">В производстве</option>
+                                <option value="completed">Выполнен</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <h5 class="card-title mb-3 mt-4">Дополнительные услуги</h5>
+
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" name="with_glass" id="with_glass" checked>
+                        <label class="form-check-label" for="with_glass">
+                            Остекление
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" name="with_assembly" id="with_assembly">
+                        <label class="form-check-label" for="with_assembly">
+                            Сборка
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="with_install" id="with_install">
+                        <label class="form-check-label" for="with_install">
+                            Монтаж
+                        </label>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Примечания</label>
+                        <textarea class="form-control" name="notes" rows="3" placeholder="Дополнительная информация по заказу..."></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-lg me-2"></i>Создать заказ
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('create-order-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = {
+        customer_name: formData.get('customer_name'),
+        city: formData.get('city') || null,
+        ral_color: formData.get('ral_color') || 'RAL 9016',
+        discount_percent: parseFloat(formData.get('discount_percent')) || 0,
+        status: formData.get('status'),
+        with_glass: formData.get('with_glass') === 'on',
+        with_assembly: formData.get('with_assembly') === 'on',
+        with_install: formData.get('with_install') === 'on',
+        notes: formData.get('notes') || null
+    };
+
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Создание...';
+
+    fetch('/api/orders', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            window.location.href = '/order/' + result.data.id;
+        } else {
+            alert('Ошибка: ' + result.error);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-check-lg me-2"></i>Создать заказ';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Произошла ошибка при создании заказа');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-check-lg me-2"></i>Создать заказ';
+    });
+});
+</script>
+{% endblock %}

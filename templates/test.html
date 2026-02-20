@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block title %}Тестирование — Joy Vision Calculator{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-bug"></i> Тестирование системы</h1>
+    <a href="/" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> На главную
+    </a>
+</div>
+
+<div class="row">
+    <!-- API Tests -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-server"></i> API Endpoints</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <button class="list-group-item list-group-item-action" onclick="testEndpoint('GET', '/health', 'test-health')">
+                        <i class="bi bi-heart-pulse"></i> GET /health
+                        <span id="test-health" class="float-end"></span>
+                    </button>
+                    <button class="list-group-item list-group-item-action" onclick="testEndpoint('GET', '/api/orders', 'test-orders')">
+                        <i class="bi bi-list"></i> GET /api/orders
+                        <span id="test-orders" class="float-end"></span>
+                    </button>
+                    <button class="list-group-item list-group-item-action" onclick="testEndpoint('GET', '/api/prices', 'test-prices')">
+                        <i class="bi bi-currency-dollar"></i> GET /api/prices
+                        <span id="test-prices" class="float-end"></span>
+                    </button>
+                </div>
+                <button class="btn btn-primary w-100 mt-3" onclick="runAllApiTests()">
+                    <i class="bi bi-play-circle"></i> Запустить все тесты API
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calculator Tests -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-calculator"></i> Калькулятор систем</h5>
+            </div>
+            <div class="card-body">
+                <form id="calc-test-form">
+                    <div class="mb-2">
+                        <label class="form-label form-label-sm">Тип системы</label>
+                        <select class="form-select form-select-sm" name="system_type">
+                            <option value="Slider L">Slider L</option>
+                            <option value="Slider X">Slider X</option>
+                            <option value="JV Line">JV Line</option>
+                            <option value="JV Zig-Zag">JV Zig-Zag</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-2">
+                            <label class="form-label form-label-sm">Ширина, мм</label>
+                            <input type="number" class="form-control form-control-sm" name="width" value="4000">
+                        </div>
+                        <div class="col-6 mb-2">
+                            <label class="form-label form-label-sm">Высота, мм</label>
+                            <input type="number" class="form-control form-control-sm" name="height" value="2800">
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label form-label-sm">Створок</label>
+                        <input type="number" class="form-control form-control-sm" name="panels" value="4">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-play"></i> Протестировать расчёт
+                    </button>
+                </form>
+                <div id="calc-result" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF Generation Tests -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-file-pdf"></i> Генерация PDF</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">ID заказа для тестирования PDF</label>
+                    <input type="number" class="form-control" id="pdf-order-id" value="1">
+                </div>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="testPDF('kp')">
+                        <i class="bi bi-file-pdf"></i> Тест: Коммерческое предложение
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="testPDF('spec')">
+                        <i class="bi bi-file-pdf"></i> Тест: Разблюдовка
+                    </button>
+                </div>
+                <div id="pdf-result" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bitrix24 Tests -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-cloud-upload"></i> Интеграция Bitrix24</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">ID заказа для синхронизации</label>
+                    <input type="number" class="form-control" id="bitrix-order-id" value="1">
+                </div>
+                <button class="btn btn-success w-100" onclick="testBitrixSync()">
+                    <i class="bi bi-cloud-upload"></i> Тест: Синхронизация с Bitrix24
+                </button>
+                <div id="bitrix-result" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Tests -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-database"></i> База данных</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h2 id="db-orders-count" class="mb-0">—</h2>
+                            <small class="text-muted">Заказов</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h2 id="db-systems-count" class="mb-0">—</h2>
+                            <small class="text-muted">Систем</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h2 id="db-prices-count" class="mb-0">—</h2>
+                            <small class="text-muted">Позиций в прайсе</small>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-primary w-100 mt-3" onclick="loadDbStats()">
+                    <i class="bi bi-arrow-clockwise"></i> Обновить статистику
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// API Testing
+async function testEndpoint(method, url, resultId) {
+    const badge = document.getElementById(resultId);
+    badge.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    try {
+        const response = await fetch(url, { method });
+        const data = await response.json();
+
+        if (response.ok && (data.success !== false)) {
+            badge.innerHTML = '<span class="badge bg-success">OK</span>';
+        } else {
+            badge.innerHTML = '<span class="badge bg-danger">FAIL</span>';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        badge.innerHTML = '<span class="badge bg-danger">ERROR</span>';
+    }
+}
+
+async function runAllApiTests() {
+    testEndpoint('GET', '/health', 'test-health');
+    testEndpoint('GET', '/api/orders', 'test-orders');
+    testEndpoint('GET', '/api/prices', 'test-prices');
+}
+
+// Calculator Testing
+document.getElementById('calc-test-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const data = {
+        system_type: formData.get('system_type'),
+        width: parseInt(formData.get('width')),
+        height: parseInt(formData.get('height')),
+        panels: parseFloat(formData.get('panels')),
+        opening: 'влево'
+    };
+
+    const resultDiv = document.getElementById('calc-result');
+    resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Расчёт...';
+
+    try {
+        // Create test order and add system
+        const orderResponse = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                customer_name: 'Тест калькулятора',
+                status: 'draft'
+            })
+        });
+
+        const orderResult = await orderResponse.json();
+        const orderId = orderResult.data.id;
+
+        const systemResponse = await fetch(`/api/orders/${orderId}/systems`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const systemResult = await systemResponse.json();
+
+        if (systemResult.success) {
+            const system = systemResult.data;
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <strong>✓ Расчёт успешно выполнен!</strong><br>
+                    <small>Система: ${system.system_type}</small><br>
+                    <small>Размер: ${system.width} × ${system.height} мм</small><br>
+                    <small>Створок: ${system.panels}</small><br>
+                    <strong>Цена: ${formatPrice(system.price)}</strong>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>✗ Ошибка расчёта:</strong><br>
+                    ${systemResult.error}
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        resultDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <strong>✗ Ошибка:</strong> ${error.message}
+            </div>
+        `;
+    }
+});
+
+// PDF Testing
+function testPDF(type) {
+    const orderId = document.getElementById('pdf-order-id').value;
+    const resultDiv = document.getElementById('pdf-result');
+
+    if (!orderId) {
+        resultDiv.innerHTML = '<div class="alert alert-warning">Укажите ID заказа</div>';
+        return;
+    }
+
+    resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Генерация PDF...';
+
+    const url = `/api/orders/${orderId}/pdf/${type}`;
+    window.open(url, '_blank');
+
+    setTimeout(() => {
+        resultDiv.innerHTML = `
+            <div class="alert alert-info">
+                <strong>PDF должен открыться в новой вкладке</strong><br>
+                <small>Тип: ${type === 'kp' ? 'Коммерческое предложение' : 'Разблюдовка'}</small>
+            </div>
+        `;
+    }, 500);
+}
+
+// Bitrix24 Testing
+async function testBitrixSync() {
+    const orderId = document.getElementById('bitrix-order-id').value;
+    const resultDiv = document.getElementById('bitrix-result');
+
+    if (!orderId) {
+        resultDiv.innerHTML = '<div class="alert alert-warning">Укажите ID заказа</div>';
+        return;
+    }
+
+    resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Синхронизация...';
+
+    try {
+        const response = await fetch(`/api/bitrix/sync/${orderId}`, {
+            method: 'POST'
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <strong>✓ Синхронизация успешна!</strong><br>
+                    <small>ID сделки: ${result.data.bitrix_deal_id}</small><br>
+                    <small>Загружено файлов: ${result.data.files_uploaded.length}</small>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>✗ Ошибка синхронизации:</strong><br>
+                    ${result.error}
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        resultDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <strong>✗ Ошибка:</strong> ${error.message}
+            </div>
+        `;
+    }
+}
+
+// Database Stats
+async function loadDbStats() {
+    try {
+        const [ordersResp, pricesResp] = await Promise.all([
+            fetch('/api/orders'),
+            fetch('/api/prices')
+        ]);
+
+        const ordersData = await ordersResp.json();
+        const pricesData = await pricesResp.json();
+
+        if (ordersData.success) {
+            const orders = ordersData.data;
+            document.getElementById('db-orders-count').textContent = orders.length;
+
+            const systemsCount = orders.reduce((sum, order) => sum + order.systems_count, 0);
+            document.getElementById('db-systems-count').textContent = systemsCount;
+        }
+
+        if (pricesData.success) {
+            document.getElementById('db-prices-count').textContent = pricesData.data.length;
+        }
+    } catch (error) {
+        console.error('Error loading DB stats:', error);
+    }
+}
+
+// Utils
+function formatPrice(price) {
+    return new Intl.NumberFormat('ru-RU', {
+        style: 'currency',
+        currency: 'RUB',
+        minimumFractionDigits: 0
+    }).format(price || 0);
+}
+
+// Auto-load stats on page load
+document.addEventListener('DOMContentLoaded', loadDbStats);
+</script>
+{% endblock %}

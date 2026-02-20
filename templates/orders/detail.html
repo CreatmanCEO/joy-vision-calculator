@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Заказ #{{ order_id }} — Joy Vision Calculator{% endblock %}
+
+{% block content %}
+<div id="order-container">
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3">Загрузка заказа...</p>
+    </div>
+</div>
+
+<!-- Модальное окно добавления системы -->
+<div class="modal fade" id="addSystemModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Добавить систему</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="add-system-form">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Тип системы <span class="text-danger">*</span></label>
+                            <select class="form-select" name="system_type" required>
+                                <option value="">Выберите тип</option>
+                                <option value="Slider L">Slider L (параллельно-сдвижная)</option>
+                                <option value="Slider X">Slider X (усиленная)</option>
+                                <option value="JV Line">JV Line (с парковкой)</option>
+                                <option value="JV Zig-Zag">JV Zig-Zag (гармошка)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Направление открывания</label>
+                            <select class="form-select" name="opening">
+                                <option value="влево">Влево</option>
+                                <option value="вправо">Вправо</option>
+                                <option value="от центра">От центра</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Ширина, мм <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="width" required min="1000" max="10000">
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Высота, мм <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="height" required min="1000" max="5000">
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Створок <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="panels" required min="2" max="10" step="1">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg"></i> Добавить и рассчитать
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/order-detail.js') }}"></script>
+<script>
+const ORDER_ID = {{ order_id }};
+document.addEventListener('DOMContentLoaded', () => loadOrder(ORDER_ID));
+</script>
+{% endblock %}
