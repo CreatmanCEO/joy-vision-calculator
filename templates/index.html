@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Заказы — Joy Vision Calculator{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Заказы</h1>
+    <a href="/order/new" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Новый заказ
+    </a>
+</div>
+
+<!-- Фильтры -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form class="row g-3" method="GET">
+            <div class="col-md-4">
+                <label class="form-label">Статус</label>
+                <select class="form-select" name="status">
+                    <option value="">Все</option>
+                    <option value="draft">Черновик</option>
+                    <option value="confirmed">Подтверждён</option>
+                    <option value="in_production">В производстве</option>
+                    <option value="completed">Выполнен</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Поиск</label>
+                <input type="text" class="form-control" name="search" placeholder="Заказчик или город...">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-search"></i> Найти
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Таблица заказов -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>Заказчик</th>
+                    <th>Город</th>
+                    <th>Систем</th>
+                    <th>Сумма</th>
+                    <th>Статус</th>
+                    <th>Дата</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="orders-table">
+                <!-- Данные загружаются через JS -->
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">
+                        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                        Загрузка...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadOrders();
+});
+
+function loadOrders() {
+    fetch('/api/orders')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('orders-table');
+
+            if (!data.success || data.data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            Нет заказов
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = data.data.map(order => `
+                <tr>
+                    <td><a href="/order/${order.id}">#${order.id}</a></td>
+                    <td>${order.customer_name}</td>
+                    <td>${order.city || '—'}</td>
+                    <td>${order.systems_count}</td>
+                    <td>${formatPrice(order.total_price)}</td>
+                    <td>${formatStatus(order.status)}</td>
+                    <td>${formatDate(order.created_at)}</td>
+                    <td>
+                        <a href="/order/${order.id}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+            `).join('');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('orders-table').innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center text-danger py-4">
+                        Ошибка загрузки данных
+                    </td>
+                </tr>
+            `;
+        });
+}
+
+function formatPrice(price) {
+    return new Intl.NumberFormat('ru-RU', {
+        style: 'currency',
+        currency: 'RUB',
+        minimumFractionDigits: 0
+    }).format(price || 0);
+}
+
+function formatStatus(status) {
+    const statusMap = {
+        'draft': '<span class="badge bg-secondary">Черновик</span>',
+        'confirmed': '<span class="badge bg-info">Подтверждён</span>',
+        'in_production': '<span class="badge bg-warning">В производстве</span>',
+        'completed': '<span class="badge bg-success">Выполнен</span>',
+        'cancelled': '<span class="badge bg-danger">Отменён</span>'
+    };
+    return statusMap[status] || status;
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('ru-RU');
+}
+</script>
+{% endblock %}

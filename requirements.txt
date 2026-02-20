@@ -1,0 +1,30 @@
+# Joy Vision Calculator - Dependencies
+
+# Web framework
+Flask>=3.0.0
+Flask-SQLAlchemy>=3.1.0
+Flask-Migrate>=4.0.0
+
+# Database
+SQLAlchemy>=2.0.0
+psycopg2-binary>=2.9.0  # PostgreSQL (optional)
+
+# PDF generation
+reportlab>=4.0.0
+
+# Excel import
+openpyxl>=3.1.0
+pandas>=2.0.0
+
+# HTTP requests (Bitrix API)
+requests>=2.31.0
+
+# Utilities
+python-dotenv>=1.0.0
+
+# Production server
+gunicorn>=21.0.0
+
+# Development
+pytest>=7.4.0
+pytest-flask>=1.2.0
