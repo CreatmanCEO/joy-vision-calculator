@@ -6,6 +6,8 @@ API эндпоинты для работы с ценами
 from flask import Blueprint, request, jsonify
 from extensions import db
 from models.price import PriceItem
+import pandas as pd
+from io import BytesIO
 
 pricing_bp = Blueprint('pricing', __name__)
 
@@ -126,15 +128,64 @@ def import_prices():
     if not file.filename.endswith(('.xlsx', '.xlsm')):
         return jsonify({'success': False, 'error': 'Только .xlsx/.xlsm файлы'}), 400
 
-    # TODO: Реализовать парсинг Excel
-    # import pandas as pd
-    # df = pd.read_excel(file)
-    # ...
+    try:
+        # Читаем Excel файл
+        df = pd.read_excel(BytesIO(file.read()))
 
-    return jsonify({
-        'success': True,
-        'message': 'Импорт пока не реализован'
-    })
+        # Ожидаем колонки: Артикул, Наименование, Ед.изм., Цена, Категория
+        required_cols = ['Артикул', 'Наименование', 'Цена', 'Категория']
+        if not all(col in df.columns for col in required_cols):
+            return jsonify({
+                'success': False,
+                'error': f'Нужны колонки: {", ".join(required_cols)}'
+            }), 400
+
+        created = 0
+        updated = 0
+        errors = []
+
+        for idx, row in df.iterrows():
+            article = str(row['Артикул']).strip()
+            if not article or article == 'nan':
+                continue
+
+            try:
+                item = PriceItem.query.filter_by(article=article).first()
+
+                if item:
+                    # Обновляем существующую позицию
+                    item.name = row['Наименование']
+                    item.price = float(row['Цена'])
+                    item.category = row['Категория']
+                    item.unit = row.get('Ед.изм.', 'шт')
+                    updated += 1
+                else:
+                    # Создаём новую позицию
+                    item = PriceItem(
+                        article=article,
+                        name=row['Наименование'],
+                        price=float(row['Цена']),
+                        category=row['Категория'],
+                        unit=row.get('Ед.изм.', 'шт')
+                    )
+                    db.session.add(item)
+                    created += 1
+
+            except Exception as e:
+                errors.append(f'Строка {idx + 2}: {str(e)}')
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Импортировано: создано {created}, обновлено {updated}',
+            'created': created,
+            'updated': updated,
+            'errors': errors
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @pricing_bp.route('/prices/categories', methods=['GET'])
