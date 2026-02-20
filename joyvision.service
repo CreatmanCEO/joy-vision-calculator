@@ -1,0 +1,43 @@
+[Unit]
+Description=Joy Vision Calculator - Система расчёта комплектующих безрамного остекления
+Documentation=https://github.com/your-repo/joy-vision-calculator
+After=network.target postgresql.service
+
+[Service]
+Type=notify
+User=joyvision
+Group=joyvision
+WorkingDirectory=/home/joyvision/joy-vision-calculator
+Environment="PATH=/home/joyvision/joy-vision-calculator/venv/bin"
+Environment="FLASK_ENV=production"
+
+# Команда запуска через Gunicorn
+ExecStart=/home/joyvision/joy-vision-calculator/venv/bin/gunicorn \
+    --bind 127.0.0.1:8000 \
+    --workers 4 \
+    --threads 2 \
+    --worker-class sync \
+    --timeout 120 \
+    --keep-alive 5 \
+    --max-requests 1000 \
+    --max-requests-jitter 50 \
+    --access-logfile /home/joyvision/joy-vision-calculator/logs/access.log \
+    --error-logfile /home/joyvision/joy-vision-calculator/logs/error.log \
+    --log-level info \
+    --capture-output \
+    'app:create_app()'
+
+# Перезапуск при сбое
+Restart=always
+RestartSec=10
+
+# Ограничения ресурсов
+LimitNOFILE=4096
+TimeoutStopSec=30
+
+# Безопасность
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
