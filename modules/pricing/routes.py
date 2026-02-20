@@ -4,7 +4,7 @@ API эндпоинты для работы с ценами
 """
 
 from flask import Blueprint, request, jsonify
-from app import db
+from extensions import db
 from models.price import PriceItem
 
 pricing_bp = Blueprint('pricing', __name__)

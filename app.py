@@ -4,11 +4,8 @@ Joy Vision Calculator - Веб-приложение для расчёта ком
 """
 
 from flask import Flask, render_template, jsonify
-from flask_sqlalchemy import SQLAlchemy
+from extensions import db
 from config import get_config
-
-# Инициализация расширений
-db = SQLAlchemy()
 
 
 def create_app(config_class=None):
@@ -35,6 +32,7 @@ def create_app(config_class=None):
 
     # Создание таблиц БД
     with app.app_context():
+        from models import Order, OrderSystem, PriceItem
         db.create_all()
 
     # Главная страница

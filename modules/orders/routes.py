@@ -4,7 +4,7 @@ API эндпоинты для работы с заказами
 """
 
 from flask import Blueprint, request, jsonify
-from app import db
+from extensions import db
 from models.order import Order, OrderSystem
 
 orders_bp = Blueprint('orders', __name__)
