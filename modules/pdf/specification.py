@@ -1,7 +1,7 @@
 # modules/pdf/specification.py
 """
 Генерация PDF разблюдовки (спецификации комплектующих)
-Адаптировано из C:/Hans/Разблюдовка_KP/reader_0.2.py
+Формат как в оригинальной разблюдовке заказчика
 """
 
 from reportlab.lib.pagesizes import A4
@@ -15,211 +15,216 @@ from .fonts import register_fonts
 
 
 def generate_specification_pdf(order, output_path):
-    """
-    Генерация PDF разблюдовки (спецификации комплектующих) для заказа
+    """Генерация разблюдовки в формате оригинала"""
 
-    Args:
-        order: объект Order с системами
-        output_path: путь для сохранения PDF
-
-    Returns:
-        путь к сгенерированному файлу
-    """
-
-    # Создаем PDF документ
     doc = SimpleDocTemplate(
         output_path,
         pagesize=A4,
-        topMargin=15*mm,
-        bottomMargin=15*mm,
-        leftMargin=12*mm,
-        rightMargin=12*mm
+        topMargin=12*mm,
+        bottomMargin=12*mm,
+        leftMargin=10*mm,
+        rightMargin=10*mm
     )
 
     elements = []
     styles = getSampleStyleSheet()
-
-    # Регистрация шрифтов с поддержкой кириллицы
     font_name, font_bold = register_fonts()
 
-    # Заголовок
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=18,
-        textColor=colors.HexColor('#1f4788'),
-        spaceAfter=10,
-        alignment=TA_CENTER,
-        fontName=font_bold
-    )
+    # Цветовая схема (как в оригинале)
+    color_profiles = colors.HexColor('#cce5ff')      # Голубой для профилей
+    color_hardware = colors.HexColor('#ccffcc')      # Зеленый для фурнитуры
+    color_seals = colors.HexColor('#ffffcc')         # Желтый для уплотнителей
+    color_header = colors.HexColor('#e0e0e0')        # Серый для заголовков
 
-    title = Paragraph(f"СПЕЦИФИКАЦИЯ №{order.id}", title_style)
-    elements.append(title)
+    # ========== ЗАГОЛОВОК ==========
+    title_style = ParagraphStyle(
+        'Title',
+        fontSize=16,
+        fontName=font_bold,
+        alignment=TA_CENTER,
+        spaceAfter=8
+    )
+    elements.append(Paragraph(f"ЗАКАЗ № {str(order.id).zfill(3)}", title_style))
     elements.append(Spacer(1, 5*mm))
 
-    # Информация о заказе
-    info_style = ParagraphStyle(
-        'Info',
-        parent=styles['Normal'],
-        fontSize=10,
-        fontName=font_name,
-        leading=14
-    )
+    # ========== ИНФОРМАЦИЯ О ЗАКАЗЕ ==========
+    info_style = ParagraphStyle('Info', fontSize=9, fontName=font_name, leading=12)
 
-    info_data = [
-        ['Заказчик:', order.customer_name],
-        ['Город:', order.city or '—'],
-        ['Цвет RAL:', order.ral_color or '—'],
-        ['Дата:', datetime.now().strftime('%d.%m.%Y')]
-    ]
+    elements.append(Paragraph(f"Цвет RAL: {order.ral_color or 'RAL 9016'}", info_style))
+    elements.append(Paragraph(f"Дата запуска: {datetime.now().strftime('%d.%m.%Y')}", info_style))
+    elements.append(Paragraph(f"Город: {order.city or '—'}", info_style))
+    elements.append(Paragraph(f"Заказчик: {order.customer_name}", info_style))
+    elements.append(Spacer(1, 8*mm))
 
-    info_table = Table(info_data, colWidths=[30*mm, 150*mm])
-    info_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (0, -1), font_bold),
-        ('FONTNAME', (1, 0), (1, -1), font_name),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('ALIGN', (0, 0), (0, -1), 'LEFT'),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+    # ========== ДОПОЛНИТЕЛЬНЫЕ РАБОТЫ (справа в оригинале) ==========
+    services_data = [['ДОПОЛНИТЕЛЬНЫЕ РАБОТЫ:']]
+    services_data.append([f"• Остекление: {'Нет' if not order.with_glass else 'Да'}"])
+    services_data.append([f"• Монтаж: {'Нет' if not order.with_install else 'Да'}"])
+    services_data.append([f"• Доставка: Нет"])
+    services_data.append([f"• Продеть щетку: Нет"])
+    services_data.append([f"• Фрезеровка: Нет"])
+    services_data.append([f"• Подготовка к монтажу: Нет"])
+
+    services_table = Table(services_data, colWidths=[190*mm])
+    services_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, 0), font_bold),
+        ('FONTNAME', (0, 1), (0, -1), font_name),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BACKGROUND', (0, 0), (-1, -1), color_header),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
     ]))
-    elements.append(info_table)
-    elements.append(Spacer(1, 10*mm))
+    elements.append(services_table)
+    elements.append(Spacer(1, 8*mm))
+
+    # ========== ТАБЛИЦА КОМПЛЕКТУЮЩИХ ==========
+    # Заголовок таблицы
+    main_table_data = [['Наименование', 'Ед', 'СП', 'Итого']]
 
     # Обрабатываем каждую систему
-    for sys_idx, system in enumerate(order.systems):
-        if sys_idx > 0:
-            elements.append(PageBreak())
-
-        # Заголовок системы
-        system_header_style = ParagraphStyle(
-            'SystemHeader',
-            parent=styles['Heading2'],
-            fontSize=14,
-            textColor=colors.HexColor('#1f4788'),
-            spaceAfter=10,
-            fontName=font_bold
-        )
-
-        system_header = Paragraph(
-            f"Позиция {system.position}: {system.system_type}",
-            system_header_style
-        )
-        elements.append(system_header)
-
-        # Параметры системы
-        sys_info = system.calculated_data.get('system_info', {}) if system.calculated_data else {}
-        params_data = [
-            ['Размер проема:', f"{system.width} × {system.height} мм"],
-            ['Количество створок:', f"{int(system.panels)}"],
-            ['Направление открывания:', system.opening or 'влево'],
-        ]
-
-        if sys_info.get('track_type'):
-            params_data.append(['Тип направляющих:', sys_info['track_type']])
-
-        params_table = Table(params_data, colWidths=[45*mm, 140*mm])
-        params_table.setStyle(TableStyle([
-            ('FONTNAME', (0, 0), (0, -1), font_bold),
-            ('FONTNAME', (1, 0), (1, -1), font_name),
-            ('FONTSIZE', (0, 0), (-1, -1), 9),
-            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
-        ]))
-        elements.append(params_table)
-        elements.append(Spacer(1, 8*mm))
-
-        # Получаем данные расчёта
+    for system in order.systems:
         calc_data = system.calculated_data or {}
 
-        # Генерируем таблицу для каждой категории
-        categories = [
-            ('ПРОФИЛИ', 'profiles'),
-            ('ФУРНИТУРА', 'hardware'),
-            ('УПЛОТНИТЕЛИ', 'seals'),
-            ('МЕЖСТВОРОЧНЫЕ УПЛОТНИТЕЛИ', 'interpanel_seals'),
-            ('РАСХОДНЫЕ МАТЕРИАЛЫ', 'consumables'),
-            ('КРЕПЁЖ', 'fasteners'),
+        # Категории с цветовым кодированием (как в оригинале)
+        categories_with_colors = [
+            ('profiles', color_profiles),
+            ('seals', color_seals),
+            ('interpanel_seals', color_seals),
+            ('hardware', color_hardware),
+            ('consumables', color_profiles),
+            ('fasteners', color_profiles),
         ]
 
-        for cat_name, cat_key in categories:
+        for cat_key, cat_color in categories_with_colors:
             items = calc_data.get(cat_key, [])
             if not items:
                 continue
 
-            # Заголовок категории
-            cat_style = ParagraphStyle(
-                'Category',
-                parent=styles['Normal'],
-                fontSize=11,
-                textColor=colors.HexColor('#1f4788'),
-                fontName=font_bold,
-                spaceBefore=5,
-                spaceAfter=3
-            )
-            cat_header = Paragraph(cat_name, cat_style)
-            elements.append(cat_header)
-
-            # Таблица комплектующих
-            table_data = [['№', 'Артикул', 'Наименование', 'Ед.изм.', 'Кол-во']]
-
-            for idx, item in enumerate(items, 1):
-                code = item.get('code', '—')
+            for item in items:
                 name = item.get('name', '—')
 
-                # Определяем единицу измерения и количество
+                # Определяем единицу и количество
                 if cat_key in ['profiles', 'seals', 'interpanel_seals']:
-                    # Для профилей и уплотнителей - метры
                     qty = item.get('total_m', 0)
-                    unit = 'п.м.'
+                    unit = 'п.м'
                 else:
-                    # Для остального - штуки
                     qty = item.get('qty', item.get('pieces', 0))
                     unit = item.get('unit', 'шт')
 
-                # Добавляем примечание если есть
+                # Примечание
                 note = item.get('note', '')
                 if note:
-                    name = f"{name} ({note})"
+                    name = f"{name} - {note}"
 
-                table_data.append([
-                    str(idx),
-                    code,
+                # Добавляем строку с цветом категории
+                main_table_data.append([
                     name,
                     unit,
-                    f"{qty:.2f}" if isinstance(qty, float) else str(qty)
+                    f"{qty:.3f}" if isinstance(qty, float) else str(qty),
+                    f"{qty:.3f}" if isinstance(qty, float) else str(qty)
                 ])
 
-            # Создаем таблицу
-            table = Table(table_data, colWidths=[8*mm, 22*mm, 95*mm, 20*mm, 20*mm])
-            table.setStyle(TableStyle([
-                # Заголовок
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1f4788')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), font_bold),
-                ('FONTSIZE', (0, 0), (-1, 0), 9),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-                ('TOPPADDING', (0, 0), (-1, 0), 8),
+    # Создаем основную таблицу
+    main_table = Table(main_table_data, colWidths=[130*mm, 20*mm, 20*mm, 20*mm])
 
-                # Тело таблицы
-                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-                ('ALIGN', (0, 1), (0, -1), 'CENTER'),  # № по центру
-                ('ALIGN', (1, 1), (2, -1), 'LEFT'),    # Артикул и название слева
-                ('ALIGN', (3, 1), (3, -1), 'CENTER'),  # Ед.изм. по центру
-                ('ALIGN', (4, 1), (4, -1), 'RIGHT'),   # Кол-во справа
-                ('FONTNAME', (0, 1), (-1, -1), font_name),
-                ('FONTSIZE', (0, 1), (-1, -1), 8),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('LEFTPADDING', (0, 0), (-1, -1), 4),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 4),
-                ('TOPPADDING', (0, 1), (-1, -1), 4),
-                ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
-            ]))
+    # Стили для таблицы
+    table_styles = [
+        # Заголовок
+        ('BACKGROUND', (0, 0), (-1, 0), color_header),
+        ('FONTNAME', (0, 0), (-1, 0), font_bold),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+        ('ALIGN', (1, 0), (-1, 0), 'CENTER'),
+        ('TOPPADDING', (0, 0), (-1, 0), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
 
-            elements.append(table)
-            elements.append(Spacer(1, 5*mm))
+        # Общие стили
+        ('FONTNAME', (0, 1), (-1, -1), font_name),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('ALIGN', (0, 1), (0, -1), 'LEFT'),
+        ('ALIGN', (1, 1), (-1, -1), 'CENTER'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 1), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 3),
+    ]
+
+    # Применяем цвета к строкам (нужно определить диапазоны по категориям)
+    # Это упрощенная версия - в оригинале цвета зависят от типа комплектующих
+    row_idx = 1
+    for system in order.systems:
+        calc_data = system.calculated_data or {}
+
+        categories_with_colors = [
+            ('profiles', color_profiles),
+            ('seals', color_seals),
+            ('interpanel_seals', color_seals),
+            ('hardware', color_hardware),
+            ('consumables', color_profiles),
+            ('fasteners', color_profiles),
+        ]
+
+        for cat_key, cat_color in categories_with_colors:
+            items = calc_data.get(cat_key, [])
+            if not items:
+                continue
+
+            for item in items:
+                table_styles.append(('BACKGROUND', (0, row_idx), (-1, row_idx), cat_color))
+                row_idx += 1
+
+    main_table.setStyle(TableStyle(table_styles))
+    elements.append(main_table)
+    elements.append(Spacer(1, 10*mm))
+
+    # ========== ПАРАМЕТРЫ СИСТЕМ (внизу) ==========
+    elements.append(Paragraph('Параметры систем: Slider', ParagraphStyle(
+        'SectionHeader',
+        fontSize=11,
+        fontName=font_bold,
+        spaceAfter=5
+    )))
+
+    for system in order.systems:
+        sys_info = system.calculated_data.get('system_info', {}) if system.calculated_data else {}
+
+        params_text = f"""
+<b>С1: {system.system_type} {int(system.panels)}-дор.</b><br/>
+ШхВ: {system.width}x{system.height}<br/>
+Ств.:{int(system.panels)}<br/>
+Размер стекла:<br/>
+ширина: {sys_info.get('glass_width_mm', 0):.0f}<br/>
+высота: {sys_info.get('glass_height_mm', 0):.0f}<br/>
+<br/>
+Створки:<br/>
+крайняя слева: 1011<br/>
+средняя слева: 1001
+"""
+
+        # Обернуть в Paragraph для поддержки HTML разметки
+        params_style = ParagraphStyle(
+            'ParamsBox',
+            fontSize=8,
+            fontName=font_name,
+            leading=10
+        )
+        params_paragraph = Paragraph(params_text, params_style)
+
+        params_box = Table([[params_paragraph]], colWidths=[190*mm])
+        params_box.setStyle(TableStyle([
+            ('BOX', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('LEFTPADDING', (0, 0), (-1, -1), 8),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        elements.append(params_box)
+        elements.append(Spacer(1, 5*mm))
 
     # Генерируем PDF
     doc.build(elements)
-
     return output_path
