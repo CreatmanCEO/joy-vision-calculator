@@ -5,10 +5,8 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.units import mm
 from reportlab.lib.enums import TA_CENTER
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
 from datetime import datetime
-import os
+from .fonts import register_fonts
 
 def generate_commercial_pdf(order, output_path):
     """Генерация коммерческого предложения"""
@@ -17,17 +15,9 @@ def generate_commercial_pdf(order, output_path):
                            leftMargin=20*mm, rightMargin=20*mm)
     elements = []
     styles = getSampleStyleSheet()
-    
-    # Регистрация русского шрифта (если доступен)
-    try:
-        font_path = 'static/fonts/DejaVuSans.ttf'
-        if os.path.exists(font_path):
-            pdfmetrics.registerFont(TTFont('DejaVuSans', font_path))
-            font_name = 'DejaVuSans'
-        else:
-            font_name = 'Helvetica'
-    except:
-        font_name = 'Helvetica'
+
+    # Регистрация шрифтов с поддержкой кириллицы
+    font_name, font_bold = register_fonts()
 
     # Заголовок
     title_style = ParagraphStyle(
@@ -37,9 +27,9 @@ def generate_commercial_pdf(order, output_path):
         textColor=colors.HexColor('#1f4788'),
         spaceAfter=20,
         alignment=TA_CENTER,
-        fontName=font_name
+        fontName=font_bold  # Используем жирный шрифт
     )
-    title = Paragraph(f"<b>КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ №{order.id}</b>", title_style)
+    title = Paragraph(f"КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ №{order.id}", title_style)
     elements.append(title)
     elements.append(Spacer(1, 10*mm))
 
@@ -72,13 +62,13 @@ def generate_commercial_pdf(order, output_path):
 
     # Подытог
     subtotal = sum(s.price or 0 for s in order.systems)
-    table_data.append(['', '', '', '<b>Итого:</b>', f'<b>{subtotal:,.2f}</b>'])
+    table_data.append(['', '', '', 'Итого:', f'{subtotal:,.2f}'])
 
     # Скидка (если есть)
     if order.discount_percent > 0:
         discount_amount = subtotal * order.discount_percent / 100
         table_data.append(['', '', '', f'Скидка {order.discount_percent}%:', f'-{discount_amount:,.2f}'])
-        table_data.append(['', '', '', '<b>ИТОГО К ОПЛАТЕ:</b>', f'<b>{order.total_price:,.2f}</b>'])
+        table_data.append(['', '', '', 'ИТОГО К ОПЛАТЕ:', f'{order.total_price:,.2f}'])
 
     # Создаем таблицу
     table = Table(table_data, colWidths=[15*mm, 55*mm, 35*mm, 35*mm, 35*mm])
@@ -109,6 +99,8 @@ def generate_commercial_pdf(order, output_path):
         ('LINEABOVE', (0, -3), (-1, -3), 2, colors.grey),
         ('LINEABOVE', (0, -1), (-1, -1), 2, colors.HexColor('#1f4788')),
         ('FONTSIZE', (0, -1), (-1, -1), 12),
+        ('FONTNAME', (3, -3), (4, -3), font_bold),  # Жирный шрифт для "Итого"
+        ('FONTNAME', (3, -1), (4, -1), font_bold),  # Жирный шрифт для "ИТОГО К ОПЛАТЕ"
     ]))
     elements.append(table)
 

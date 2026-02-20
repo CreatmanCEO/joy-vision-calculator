@@ -10,23 +10,21 @@ from reportlab.lib.units import mm
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-import os
+from .fonts import register_fonts
 
 
 def generate_specification_pdf(order, output_path):
     """
-    Генерация разблюдовки (спецификации комплектующих) для заказа
-    
+    Генерация PDF разблюдовки (спецификации комплектующих) для заказа
+
     Args:
         order: объект Order с системами
         output_path: путь для сохранения PDF
-    
+
     Returns:
         путь к сгенерированному файлу
     """
-    
+
     # Создаем PDF документ
     doc = SimpleDocTemplate(
         output_path,
@@ -36,20 +34,12 @@ def generate_specification_pdf(order, output_path):
         leftMargin=15*mm,
         rightMargin=15*mm
     )
-    
+
     elements = []
     styles = getSampleStyleSheet()
-    
-    # Регистрация русского шрифта (если доступен)
-    try:
-        font_path = 'static/fonts/DejaVuSans.ttf'
-        if os.path.exists(font_path):
-            pdfmetrics.registerFont(TTFont('DejaVuSans', font_path))
-            font_name = 'DejaVuSans'
-        else:
-            font_name = 'Helvetica'
-    except:
-        font_name = 'Helvetica'
+
+    # Регистрация шрифтов с поддержкой кириллицы
+    font_name, font_bold = register_fonts()
     
     # Заголовок
     title_style = ParagraphStyle(
