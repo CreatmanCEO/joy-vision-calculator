@@ -24,10 +24,12 @@ def create_app(config_class=None):
     # Регистрация blueprints
     from modules.orders.routes import orders_bp
     from modules.pricing.routes import pricing_bp
+    from modules.pdf.routes import pdf_bp
     # from modules.bitrix.routes import bitrix_bp  # TODO
 
     app.register_blueprint(orders_bp, url_prefix='/api')
     app.register_blueprint(pricing_bp, url_prefix='/api')
+    app.register_blueprint(pdf_bp, url_prefix='/api')
     # app.register_blueprint(bitrix_bp, url_prefix='/api/bitrix')
 
     # Создание таблиц БД
