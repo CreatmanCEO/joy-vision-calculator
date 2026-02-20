@@ -11,11 +11,12 @@
 Код адаптирован из C:/Hans/calculator.py
 """
 
-# TODO: Перенести функции из calculator.py
-# from .slider_l import calculate_slider_l
-# from .slider_x import calculate_slider_x
-# from .line import calculate_jv_line
-# from .zigzag import calculate_jv_zigzag
+from .core import (
+    calculate_slider_l,
+    calculate_slider_x,
+    calculate_jv_line,
+    calculate_jv_zigzag
+)
 
 
 def calculate_system(system_data: dict) -> dict:
@@ -45,30 +46,17 @@ def calculate_system(system_data: dict) -> dict:
     """
     system_type = system_data.get('system_type')
 
-    # TODO: Подключить калькуляторы
-    # if system_type == 'Slider L':
-    #     return calculate_slider_l(**system_data)
-    # elif system_type == 'Slider X':
-    #     return calculate_slider_x(**system_data)
-    # elif system_type == 'JV Line':
-    #     return calculate_jv_line(**system_data)
-    # elif system_type == 'JV Zig-Zag':
-    #     return calculate_jv_zigzag(**system_data)
-
-    # Заглушка
-    return {
-        'system_info': {
-            'type': system_type,
-            'width_mm': system_data.get('width'),
-            'height_mm': system_data.get('height'),
-            'panels': system_data.get('panels')
-        },
-        'profiles': [],
-        'hardware': [],
-        'seals': [],
-        'consumables': [],
-        'fasteners': [],
-        'summary': {
-            'message': 'Калькулятор в разработке'
-        }
+    calculators = {
+        'Slider L': calculate_slider_l,
+        'Slider X': calculate_slider_x,
+        'JV Line': calculate_jv_line,
+        'JV Zig-Zag': calculate_jv_zigzag
     }
+
+    calculator = calculators.get(system_type)
+    if not calculator:
+        raise ValueError(f'Неизвестный тип системы: {system_type}')
+
+    # Исключаем system_type из параметров, т.к. функции калькулятора его не принимают
+    calc_params = {k: v for k, v in system_data.items() if k != 'system_type'}
+    return calculator(**calc_params)
