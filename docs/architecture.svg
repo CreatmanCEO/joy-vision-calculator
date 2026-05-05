@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" font-family="Inter, Segoe UI, sans-serif" font-size="13">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+    <style>
+      .box { fill: #f8fafc; stroke: #334155; stroke-width: 1.5; rx: 8; ry: 8; }
+      .ext { fill: #fef3c7; stroke: #b45309; stroke-width: 1.5; rx: 8; ry: 8; }
+      .core { fill: #dbeafe; stroke: #1d4ed8; stroke-width: 1.5; rx: 8; ry: 8; }
+      .data { fill: #dcfce7; stroke: #15803d; stroke-width: 1.5; rx: 8; ry: 8; }
+      .title { font-size: 18px; font-weight: 600; fill: #0f172a; }
+      .label { font-weight: 600; fill: #0f172a; }
+      .sub { fill: #475569; font-size: 11px; }
+      .arrow { stroke: #475569; stroke-width: 1.5; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <text x="20" y="32" class="title">Joy Vision Calculator — Architecture</text>
+
+  <!-- Browser -->
+  <rect x="40" y="70" width="200" height="80" class="ext"/>
+  <text x="140" y="100" text-anchor="middle" class="label">Browser</text>
+  <text x="140" y="120" text-anchor="middle" class="sub">Bootstrap UI / Jinja2</text>
+  <text x="140" y="138" text-anchor="middle" class="sub">REST calls (JSON)</text>
+
+  <!-- Flask app -->
+  <rect x="320" y="70" width="540" height="380" class="box"/>
+  <text x="590" y="95" text-anchor="middle" class="label">Flask app (app.py + Gunicorn)</text>
+
+  <!-- Modules -->
+  <rect x="345" y="115" width="240" height="70" class="core"/>
+  <text x="465" y="140" text-anchor="middle" class="label">orders/</text>
+  <text x="465" y="160" text-anchor="middle" class="sub">CRUD REST API</text>
+  <text x="465" y="176" text-anchor="middle" class="sub">order + system models</text>
+
+  <rect x="600" y="115" width="240" height="70" class="core"/>
+  <text x="720" y="140" text-anchor="middle" class="label">pricing/</text>
+  <text x="720" y="160" text-anchor="middle" class="sub">price catalog API</text>
+  <text x="720" y="176" text-anchor="middle" class="sub">Excel import (pandas)</text>
+
+  <rect x="345" y="200" width="240" height="70" class="core"/>
+  <text x="465" y="225" text-anchor="middle" class="label">calculator/</text>
+  <text x="465" y="245" text-anchor="middle" class="sub">parts list per system</text>
+  <text x="465" y="261" text-anchor="middle" class="sub">Slider L/X, JV Line, Zig-Zag</text>
+
+  <rect x="600" y="200" width="240" height="70" class="core"/>
+  <text x="720" y="225" text-anchor="middle" class="label">pdf/</text>
+  <text x="720" y="245" text-anchor="middle" class="sub">ReportLab</text>
+  <text x="720" y="261" text-anchor="middle" class="sub">KP + разблюдовка</text>
+
+  <rect x="345" y="285" width="495" height="70" class="core"/>
+  <text x="592" y="310" text-anchor="middle" class="label">bitrix/</text>
+  <text x="592" y="330" text-anchor="middle" class="sub">incoming-webhook client → deal + attached PDFs</text>
+
+  <rect x="345" y="370" width="495" height="60" class="data"/>
+  <text x="592" y="395" text-anchor="middle" class="label">SQLAlchemy 2 + Flask-Migrate</text>
+  <text x="592" y="412" text-anchor="middle" class="sub">SQLite (default) — PostgreSQL via DATABASE_URL</text>
+
+  <!-- External -->
+  <rect x="40" y="220" width="200" height="70" class="ext"/>
+  <text x="140" y="245" text-anchor="middle" class="label">Bitrix24 CRM</text>
+  <text x="140" y="265" text-anchor="middle" class="sub">incoming webhook</text>
+  <text x="140" y="281" text-anchor="middle" class="sub">deals + drive folder</text>
+
+  <rect x="40" y="320" width="200" height="60" class="ext"/>
+  <text x="140" y="345" text-anchor="middle" class="label">Excel price list</text>
+  <text x="140" y="362" text-anchor="middle" class="sub">.xlsx upload</text>
+
+  <rect x="40" y="410" width="200" height="60" class="data"/>
+  <text x="140" y="435" text-anchor="middle" class="label">Local FS</text>
+  <text x="140" y="452" text-anchor="middle" class="sub">data/app.db, exports/</text>
+
+  <!-- Arrows -->
+  <path class="arrow" d="M 240 110 L 320 130"/>
+  <path class="arrow" d="M 240 130 L 320 145"/>
+  <path class="arrow" d="M 320 320 L 240 255"/>
+  <path class="arrow" d="M 240 350 L 320 230"/>
+  <path class="arrow" d="M 590 430 L 240 440"/>
+
+  <text x="20" y="500" class="sub">Legend:</text>
+  <rect x="80" y="488" width="14" height="14" class="ext"/>
+  <text x="100" y="500" class="sub">External system</text>
+  <rect x="220" y="488" width="14" height="14" class="core"/>
+  <text x="240" y="500" class="sub">Flask blueprint / module</text>
+  <rect x="400" y="488" width="14" height="14" class="data"/>
+  <text x="420" y="500" class="sub">Persistence</text>
+
+  <text x="20" y="540" class="sub">Request flow: Browser → Flask (orders → calculator → pricing → pdf → bitrix) → Bitrix24 + filesystem.</text>
+</svg>

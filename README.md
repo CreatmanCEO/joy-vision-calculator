@@ -1,162 +1,197 @@
 # Joy Vision Calculator
 
-Веб-приложение для расчёта комплектующих безрамного остекления с автоматической генерацией PDF и интеграцией с Битрикс24.
+[![License: Proprietary](https://img.shields.io/badge/license-proprietary-red.svg)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/CreatmanCEO/joy-vision-calculator?style=social)](https://github.com/CreatmanCEO/joy-vision-calculator/stargazers)
+[![Validate](https://github.com/CreatmanCEO/joy-vision-calculator/actions/workflows/validate.yml/badge.svg)](https://github.com/CreatmanCEO/joy-vision-calculator/actions/workflows/validate.yml)
+[![Status: delivered](https://img.shields.io/badge/status-delivered-blue)]()
+[![Platform: Flask](https://img.shields.io/badge/Flask-3.x-black?logo=flask)](https://flask.palletsprojects.com/)
 
-## 📋 Возможности
+Web app for calculating frameless glazing component lists, generating commercial-offer / specification PDFs, and pushing orders into Bitrix24 CRM. Built for [Joy Vision](https://joyvision.ru) — a Russian frameless-glazing manufacturer — to replace a manual Excel-based workflow.
 
-- ✅ Автоматический расчёт комплектующих для 4 типов систем:
-  - Slider L (параллельно-сдвижная)
-  - Slider X (усиленная параллельно-сдвижная)
-  - JV Line (с парковкой)
-  - JV Zig-Zag (гармошка)
-- ✅ Генерация PDF документов:
-  - Коммерческое предложение
-  - Разблюдовка (спецификация комплектующих)
-- ✅ Управление прайс-листом с импортом из Excel
-- ✅ Интеграция с Битрикс24 CRM
-- ✅ REST API для всех операций
-- ✅ Расчёт скидок и итоговых сумм
+> Russian version: [README.ru.md](README.ru.md)
 
-## 🚀 Быстрый старт
+## Screenshots
 
-### Требования
-- **Windows 10/11** или **Ubuntu 20.04+**
-- Python 3.10 или выше
-- 500 МБ свободного места на диске
+| Calculator | Orders list |
+|---|---|
+| ![Calculator](docs/screenshots/01-calculator.jpg) | ![Orders list](docs/screenshots/02-orders.jpg) |
 
-### Установка
+[Demo video — orders flow](docs/demos/orders-flow.mp4) (~1.9 MB, GitHub renders inline).
+
+## Why this exists
+
+Joy Vision's pre-software process: a sales engineer measured the opening, opened a master Excel sheet, copied formulas, manually built a parts list, exported a PDF, then re-typed the deal into Bitrix24. Two windows of the same opening could take 30–40 minutes and frequently produced wrong specs.
+
+This app collapses that into a single form:
+
+1. Pick system type, enter dimensions and quantity.
+2. Calculator emits a parts list against the live price list.
+3. One click → commercial-offer PDF + parts spec PDF.
+4. One click → order pushed to Bitrix24 as a deal with documents attached.
+
+## How it works
+
+```
+Browser (Bootstrap form)
+      │  POST /api/orders
+      ▼
+Flask app (app.py)
+      │
+      ├─ modules/calculator/  → parts list per system type
+      ├─ modules/pricing/     → reads SQLite price catalog
+      ├─ modules/pdf/         → ReportLab → KP + spec PDFs
+      └─ modules/bitrix/      → REST webhook → Bitrix24 deal
+```
+
+Supported systems:
+
+- **Slider L** — parallel-sliding
+- **Slider X** — reinforced parallel-sliding
+- **JV Line** — with parking
+- **JV Zig-Zag** — accordion
+
+Architecture diagram: [`docs/architecture.svg`](docs/architecture.svg).
+
+## Tech stack
+
+| Layer        | Tool                              |
+|--------------|-----------------------------------|
+| Language     | Python 3.10+                      |
+| Web          | Flask 3.x                         |
+| ORM          | SQLAlchemy 2.x + Flask-SQLAlchemy |
+| Migrations   | Flask-Migrate (Alembic)           |
+| Database     | SQLite (default), PostgreSQL ready |
+| PDF          | ReportLab 4.x                     |
+| Excel I/O    | pandas 2.x + openpyxl 3.x         |
+| HTTP client  | requests 2.31+                    |
+| WSGI         | Gunicorn 21+                      |
+| Tests        | pytest + pytest-flask             |
+| Frontend     | Server-rendered Jinja2 + Bootstrap |
+| CRM          | Bitrix24 incoming webhook         |
+
+## Quick start
+
+### Requirements
+
+- Windows 10/11 or Ubuntu 20.04+
+- Python 3.10+
+- ~500 MB free disk
+
+### Install
 
 **Windows:**
-```bash
-# Скачайте проект
-git clone <repository-url>
+```bat
+git clone https://github.com/CreatmanCEO/joy-vision-calculator.git
 cd joy-vision-calculator
-
-# Запустите автоматический установщик
 install.bat
-
-# Следуйте инструкциям установщика
 ```
 
 **Ubuntu (VPS):**
 ```bash
-# Скачайте проект
-git clone <repository-url>
+git clone https://github.com/CreatmanCEO/joy-vision-calculator.git
 cd joy-vision-calculator
-
-# Запустите автоматический установщик
 chmod +x install.sh
 sudo ./install.sh
-
-# Следуйте инструкциям установщика
 ```
 
-### Подробные инструкции
+Detailed walkthroughs:
 
-- [📘 Установка на Windows](INSTALL_WINDOWS.md) - пошаговая инструкция для Windows
-- [📗 Установка на Ubuntu VPS](INSTALL_UBUNTU.md) - пошаговая инструкция для сервера
-- [⚙️ Настройка Битрикс24](docs/BITRIX_SETUP.md) - подключение к CRM
+- [Windows install](INSTALL_WINDOWS.md)
+- [Ubuntu / VPS install](INSTALL_UBUNTU.md)
+- [Bitrix24 setup](docs/BITRIX_SETUP.md)
+- [Tilda integration](TILDA_INTEGRATION.md)
 
-## 📖 Документация API
+## Configuration
 
-После установки API доступно по адресу `http://localhost:5000/api`
+Settings live in `.env` (copy from `.env.example`):
 
-### Основные эндпоинты:
-
-**Заказы:**
-- `GET /api/orders` - список заказов
-- `POST /api/orders` - создать заказ
-- `GET /api/orders/{id}` - получить заказ
-- `PUT /api/orders/{id}` - обновить заказ
-- `DELETE /api/orders/{id}` - удалить заказ
-- `POST /api/orders/{id}/systems` - добавить систему к заказу
-
-**PDF документы:**
-- `GET /api/orders/{id}/pdf/kp` - скачать коммерческое предложение
-- `GET /api/orders/{id}/pdf/spec` - скачать разблюдовку
-
-**Прайс-лист:**
-- `GET /api/prices` - список цен
-- `POST /api/prices/import` - импорт из Excel
-
-**Битрикс24:**
-- `POST /api/bitrix/sync/{id}` - синхронизировать заказ с CRM
-
-## 🔧 Конфигурация
-
-Настройки хранятся в файле `.env`. Скопируйте `.env.example` и отредактируйте:
-
-```bash
-cp .env.example .env
-nano .env  # или notepad .env на Windows
+```env
+SECRET_KEY=                  # Flask secret — change before production
+BITRIX24_WEBHOOK_URL=        # incoming webhook URL
+BITRIX24_FOLDER_ID=          # Bitrix24 folder id for documents
+DATABASE_URL=                # sqlite:///data/app.db (default) or postgresql://...
 ```
 
-Обязательные настройки:
-- `SECRET_KEY` - секретный ключ Flask (измените!)
-- `BITRIX24_WEBHOOK_URL` - URL вебхука Битрикс24
-- `BITRIX24_FOLDER_ID` - ID папки для документов
+## API
 
-## 🧪 Тестирование
+After install, REST endpoints are exposed at `http://localhost:5000/api`:
 
-Запуск всех тестов:
+| Method | Path                          | Purpose                       |
+|--------|-------------------------------|-------------------------------|
+| GET    | `/api/orders`                 | list orders                   |
+| POST   | `/api/orders`                 | create order                  |
+| GET    | `/api/orders/{id}`            | fetch order                   |
+| PUT    | `/api/orders/{id}`            | update order                  |
+| DELETE | `/api/orders/{id}`            | delete order                  |
+| POST   | `/api/orders/{id}/systems`    | add system to order           |
+| GET    | `/api/orders/{id}/pdf/kp`     | commercial-offer PDF          |
+| GET    | `/api/orders/{id}/pdf/spec`   | parts spec PDF                |
+| GET    | `/api/prices`                 | list price entries            |
+| POST   | `/api/prices/import`          | import price list from Excel  |
+| POST   | `/api/bitrix/sync/{id}`       | push order to Bitrix24        |
+
+## Tests
+
 ```bash
 pytest tests/ -v
 ```
 
-Запуск конкретного теста:
-```bash
-pytest tests/test_calculator.py -v
-```
+## Limitations
 
-## 📦 Структура проекта
+- Single-tenant: no user accounts or per-company isolation.
+- Calculation rules are tuned for Joy Vision's catalog; reusing for another manufacturer requires editing `modules/calculator/` and `models/price.py`.
+- Bitrix24 integration uses incoming webhooks (no OAuth flow); webhook URL is a long-lived secret.
+- PDF templates are Russian-only (KP / разблюдовка).
+- No automated frontend tests; only backend pytest coverage.
+- SQLite is the default DB; switch to PostgreSQL via `DATABASE_URL` if you expect concurrent writers.
+
+## Project structure
 
 ```
 joy-vision-calculator/
-├── app.py                 # Главное приложение Flask
-├── config.py             # Конфигурация
-├── extensions.py         # Расширения (SQLAlchemy)
-├── models/               # Модели БД
-│   ├── order.py         # Заказы и системы
-│   └── price.py         # Прайс-лист
-├── modules/              # Модули приложения
-│   ├── calculator/      # Калькулятор комплектующих
-│   ├── orders/          # API заказов
-│   ├── pricing/         # API прайс-листа
-│   ├── pdf/             # Генерация PDF
-│   └── bitrix/          # Интеграция Битрикс24
-├── templates/            # HTML шаблоны
-├── static/               # Статические файлы
-├── data/                 # База данных и экспорты
-├── tests/                # Тесты
-└── docs/                 # Документация
+├── app.py                # Flask entry
+├── config.py             # config loader
+├── extensions.py         # SQLAlchemy / Migrate
+├── models/               # ORM models (Order, System, Price, ...)
+├── modules/
+│   ├── calculator/       # parts-list logic per system
+│   ├── orders/           # order REST API
+│   ├── pricing/          # price-list REST API + Excel import
+│   ├── pdf/              # ReportLab PDF generation
+│   └── bitrix/           # Bitrix24 webhook client
+├── templates/            # Jinja2 templates
+├── static/               # CSS/JS/Bootstrap
+├── tests/                # pytest suite
+└── docs/                 # diagrams, screenshots, demo video
 ```
 
-## 🛠️ Технологии
+## Related — Claude Code ecosystem by the same author
 
-- **Backend:** Python 3.10+, Flask 3.x
-- **База данных:** SQLAlchemy 2.x, SQLite/PostgreSQL
-- **PDF:** ReportLab 4.x
-- **Excel:** Pandas, OpenPyXL
-- **Тесты:** Pytest, Pytest-Flask
-- **API:** REST, JSON
+Sister repos exploring Claude Code workflows, context engineering, and agent tooling:
 
-## 📝 Лицензия
+- [`claude-code-antiregression-setup`](https://github.com/CreatmanCEO/claude-code-antiregression-setup)
+- [`ai-context-hierarchy`](https://github.com/CreatmanCEO/ai-context-hierarchy)
+- [`claude-statusline`](https://github.com/CreatmanCEO/claude-statusline)
+- [`notebooklm-claude-workflows`](https://github.com/CreatmanCEO/notebooklm-claude-workflows)
+- [`webtest-orch`](https://github.com/CreatmanCEO/webtest-orch)
+- [`hydrowatch`](https://github.com/CreatmanCEO/hydrowatch)
+- [`lingua-companion`](https://github.com/CreatmanCEO/lingua-companion)
+- [`security-scanner`](https://github.com/CreatmanCEO/security-scanner)
+- [`diabot`](https://github.com/CreatmanCEO/diabot)
+- [`portfolio`](https://github.com/CreatmanCEO/portfolio)
+- [`ghost-showcase`](https://github.com/CreatmanCEO/ghost-showcase)
+- [`cc-janitor`](https://github.com/CreatmanCEO/cc-janitor) — active development
 
-Проприетарное ПО © Joy Vision
+## Author
 
-## 🤝 Поддержка
+**Nick Podolyak** — full-stack engineer.
 
-При возникновении вопросов:
-1. Проверьте [FAQ](docs/FAQ.md)
-2. Просмотрите [Issues](../../issues)
-3. Свяжитесь с технической поддержкой
+- GitHub: [@CreatmanCEO](https://github.com/CreatmanCEO)
+- Habr: [creatman](https://habr.com/ru/users/creatman/)
+- dev.to: [@creatman](https://dev.to/creatman)
+- Telegram: [@Creatman_it](https://t.me/Creatman_it)
+- Site: [creatman.site](https://creatman.site)
 
-## 📅 История версий
+## License
 
-### v1.0.0 (2026-02-20)
-- ✨ Первый релиз
-- 🧮 Калькулятор для 4 типов систем
-- 📄 Генерация PDF КП и разблюдовки
-- 🔗 Интеграция с Битрикс24
-- 📊 Импорт прайс-листа из Excel
-- ✅ 20 автотестов
+Proprietary. Source published for portfolio purposes only — see [LICENSE](LICENSE). Commercial reuse requires written permission.

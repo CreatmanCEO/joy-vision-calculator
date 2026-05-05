@@ -1,0 +1,34 @@
+Joy Vision Calculator — Proprietary License
+Copyright (c) 2026 Nick Podolyak (Creatman) / Joy Vision
+
+All rights reserved.
+
+This software was developed as a commissioned project. The source code is
+published in this repository for portfolio and reference purposes only.
+
+You may NOT, without prior written permission from the copyright holder:
+
+  1. Use this software, in whole or in part, for any commercial purpose.
+  2. Copy, modify, merge, publish, distribute, sublicense, or sell copies
+     of the software or any of its components.
+  3. Deploy this software (or any derivative work) to a production
+     environment, whether public or private.
+  4. Reuse the business-logic modules (calculator, pricing, Bitrix24
+     integration, PDF templates) in any other project.
+
+Permitted, without permission:
+
+  - Reading the source code.
+  - Cloning the repository for local, non-commercial study.
+  - Citing or quoting small excerpts for educational discussion, with
+     attribution.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+For licensing inquiries: creatmanick@gmail.com / Telegram @Creatman_it
