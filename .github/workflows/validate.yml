@@ -1,0 +1,52 @@
+name: Validate
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  meta:
+    name: Meta files present
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify LICENSE / CHANGELOG / README
+        run: |
+          test -f LICENSE || (echo "LICENSE missing" && exit 1)
+          test -f CHANGELOG.md || (echo "CHANGELOG.md missing" && exit 1)
+          test -f README.md || (echo "README.md missing" && exit 1)
+
+  json:
+    name: JSON validity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate every *.json
+        run: |
+          set -e
+          shopt -s globstar nullglob
+          fail=0
+          for f in **/*.json; do
+            python -c "import json,sys; json.load(open(sys.argv[1], encoding='utf-8'))" "$f" \
+              && echo "ok   $f" \
+              || { echo "FAIL $f"; fail=1; }
+          done
+          exit $fail
+        shell: bash
+
+  links:
+    name: Markdown link check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: 'yes'
+          use-verbose-mode: 'yes'
+          config-file: '.github/workflows/mlc-config.json'
+          file-path: 'README.md, README.ru.md, CHANGELOG.md'
